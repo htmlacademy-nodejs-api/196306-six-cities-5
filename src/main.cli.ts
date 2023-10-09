@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'reflect-metadata';
 import chalk from 'chalk';
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -13,9 +14,7 @@ function getFilesByPattern(dirPath: string, pattern: string) {
   const dirContent = readdirSync(resolve(dirPath));
   const regExp = new RegExp(pattern, 'i');
 
-  return dirContent
-    .filter((fileName) => regExp.test(fileName))
-    .map((fileName) => resolve(dirPath, fileName));
+  return dirContent.filter((fileName) => regExp.test(fileName)).map((fileName) => resolve(dirPath, fileName));
 }
 
 async function bootstrap() {

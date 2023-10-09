@@ -1,17 +1,6 @@
-import {
-  AmenityType,
-  City,
-  Coordinates,
-  HousingType,
-  Offer,
-  User,
-  UserType,
-} from '../types/index.js';
+import { AmenityType, City, Coordinates, HousingType, Offer, User, UserType } from '../types/index.js';
 
-function isInEnum<E extends Record<string, string>>(
-  enumeration: E,
-  value: string,
-): value is E[keyof E] {
+function isInEnum<E extends Record<string, string>>(enumeration: E, value: string): value is E[keyof E] {
   return Object.values(enumeration).indexOf(value) !== -1;
 }
 
@@ -49,26 +38,17 @@ function parseUserType(type: string): UserType {
   throw new Error(`User type ${type} is not supported`);
 }
 
-function parseUser(
-  email: string,
-  name: string,
-  type: string,
-  avatarPath: string,
-  password: string,
-): User {
+function parseUser(email: string, name: string, type: string, avatarPath: string): User {
   return {
     avatarPath,
     email,
     name,
-    password,
     type: parseUserType(type),
   };
 }
 
 function parseLocation(location: string): Coordinates {
-  const [latitude, longitude] = location
-    .split(';')
-    .map((coordinate) => Number.parseFloat(coordinate));
+  const [latitude, longitude] = location.split(';').map((coordinate) => Number.parseFloat(coordinate));
 
   return { latitude, longitude };
 }
@@ -93,8 +73,6 @@ export function createOffer(offerData: string): Offer {
     email,
     userType,
     avatarPath,
-    password,
-    commentAmount,
     location,
   ] = offerData.replace('\n', '').split('\t');
 
@@ -113,8 +91,7 @@ export function createOffer(offerData: string): Offer {
     guestAmount: Number.parseInt(guestAmount, 10),
     price: Number.parseInt(price, 10),
     amenities: parseAmenities(amenities),
-    author: parseUser(email, name, userType, avatarPath, password),
-    commentAmount: Number.parseInt(commentAmount, 10),
+    author: parseUser(email, name, userType, avatarPath),
     location: parseLocation(location),
   };
 }
