@@ -43,12 +43,6 @@ export class OfferEntity extends defaultClasses.TimeStamps {
   @prop({ required: true })
   public isPremium: boolean;
 
-  @prop({ required: true })
-  public isFavorite: boolean;
-
-  @prop({ required: true })
-  public rating: number;
-
   @prop({
     type: String,
     enum: HousingType,
@@ -72,14 +66,20 @@ export class OfferEntity extends defaultClasses.TimeStamps {
   })
   public amenities: AmenityType[];
 
+  @prop({ required: true, _id: false })
+  public location: Coordinates;
+
   @prop({ default: 0 })
   public commentAmount: number;
 
-  @prop({ required: true })
-  public location: Coordinates;
+  @prop({ default: 0 })
+  public rating: number;
+
+  @prop({ ref: () => UserEntity, type: () => [UserEntity], default: [] })
+  public favoredByUsers: Ref<UserEntity>[];
 
   @prop({
-    ref: UserEntity,
+    ref: () => UserEntity,
     required: true,
   })
   public authorId: Ref<UserEntity>;
