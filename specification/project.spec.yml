@@ -43,6 +43,10 @@ paths:
                   $ref: '#/components/schemas/validationError'
         '409':
           description: A user with this email already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
 
   /users/login:
     post:
@@ -64,7 +68,7 @@ paths:
             text/plain:
               schema:
                 type: string
-        '404':
+        '401':
           description: A user with specified credentials was not found.
 
     get:
@@ -107,17 +111,6 @@ paths:
             type: integer
             required: false
             description: Amount of offers to get
-        - in: query
-          name: sortBy
-          schema:
-            type: string
-            enum:
-              - date-asc
-              - date-desc
-              - rating
-              - popularity
-            required: false
-            description: Sorting of the list
       responses:
         '200':
           description: List of offers.
@@ -379,6 +372,14 @@ paths:
 
 components:
   schemas:
+    generalError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: A description of the error.
+          example: User already exists
+
     validationError:
       type: object
       properties:
@@ -729,6 +730,9 @@ components:
     offerPreview:
       type: object
       properties:
+        id:
+          type: string
+          example: 6329c3d6a04ab1061c6425ea
         price:
           type: number
           format: float
