@@ -1,6 +1,16 @@
-import { AmenityType, City, Coordinates, HousingType, Offer, User, UserType } from '../types/index.js';
+import {
+  AmenityType,
+  Coordinates,
+  HousingType,
+  Offer,
+  User,
+  UserType,
+} from '../types/index.js';
 
-function isInEnum<E extends Record<string, string>>(enumeration: E, value: string): value is E[keyof E] {
+function isInEnum<E extends Record<string, string>>(
+  enumeration: E,
+  value: string,
+): value is E[keyof E] {
   return Object.values(enumeration).indexOf(value) !== -1;
 }
 
@@ -12,14 +22,6 @@ function parseAmenities(amenities: string): AmenityType[] {
 
     throw new Error(`Amenity type ${amenity} is not supported`);
   });
-}
-
-function parseCity(city: string): City {
-  if (isInEnum<typeof City>(City, city)) {
-    return city;
-  }
-
-  throw new Error(`City ${city} is not supported`);
 }
 
 function parseHousingType(housingType: string): HousingType {
@@ -38,7 +40,12 @@ function parseUserType(type: string): UserType {
   throw new Error(`User type ${type} is not supported`);
 }
 
-function parseUser(email: string, name: string, type: string, avatarPath: string): User {
+function parseUser(
+  email: string,
+  name: string,
+  type: string,
+  avatarPath: string,
+): User {
   return {
     avatarPath,
     email,
@@ -48,7 +55,9 @@ function parseUser(email: string, name: string, type: string, avatarPath: string
 }
 
 function parseLocation(location: string): Coordinates {
-  const [latitude, longitude] = location.split(';').map((coordinate) => Number.parseFloat(coordinate));
+  const [latitude, longitude] = location
+    .split(';')
+    .map((coordinate) => Number.parseFloat(coordinate));
 
   return { latitude, longitude };
 }
@@ -58,7 +67,8 @@ export function createOffer(offerData: string): Offer {
     title,
     description,
     postDate,
-    city,
+    cityName,
+    cityLocation,
     imagePreview,
     images,
     isPremium,
@@ -78,7 +88,10 @@ export function createOffer(offerData: string): Offer {
     title,
     description,
     postDate: new Date(postDate),
-    city: parseCity(city),
+    city: {
+      name: cityName,
+      location: parseLocation(cityLocation),
+    },
     imagePreview,
     images: images.split(';'),
     isPremium: Boolean(isPremium),

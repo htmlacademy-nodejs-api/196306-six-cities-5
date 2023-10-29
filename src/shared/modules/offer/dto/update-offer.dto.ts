@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
+  IsMongoId,
   IsOptional,
   Max,
   MaxLength,
@@ -12,9 +13,11 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { AmenityType, City, HousingType } from '../../../types/index.js';
+import { Type } from 'class-transformer';
+
+import { AmenityType, HousingType } from '../../../types/index.js';
+import { CoordinatesDto } from '../../coordinates/index.js';
 import { UpdateOfferValidationMessage } from './update-offer.messages.js';
-import { CoordinatesDto } from './coordinates.dto.js';
 
 export class UpdateOfferDto {
   @IsOptional()
@@ -23,13 +26,13 @@ export class UpdateOfferDto {
   public title?: string;
 
   @IsOptional()
-  @MinLength(20, { message: UpdateOfferValidationMessage.description.minLength })
-  @MaxLength(1024, { message: UpdateOfferValidationMessage.description.maxLength })
+  @MinLength(20, {
+    message: UpdateOfferValidationMessage.description.minLength,
+  })
+  @MaxLength(1024, {
+    message: UpdateOfferValidationMessage.description.maxLength,
+  })
   public description?: string;
-
-  @IsOptional()
-  @IsEnum(City, { message: UpdateOfferValidationMessage.city.invalid })
-  public city?: City;
 
   @IsOptional()
   @MaxLength(256, { message: UpdateOfferValidationMessage.image.maxLength })
@@ -47,7 +50,9 @@ export class UpdateOfferDto {
   public isPremium?: boolean;
 
   @IsOptional()
-  @IsEnum(HousingType, { message: UpdateOfferValidationMessage.housingType.invalid })
+  @IsEnum(HousingType, {
+    message: UpdateOfferValidationMessage.housingType.invalid,
+  })
   public housingType?: HousingType;
 
   @IsOptional()
@@ -70,10 +75,18 @@ export class UpdateOfferDto {
 
   @IsOptional()
   @IsArray({ message: UpdateOfferValidationMessage.amenities.invalidFormat })
-  @IsEnum(AmenityType, { each: true, message: UpdateOfferValidationMessage.amenities.invalid })
+  @IsEnum(AmenityType, {
+    each: true,
+    message: UpdateOfferValidationMessage.amenities.invalid,
+  })
   public amenities?: AmenityType[];
 
   @IsOptional()
   @ValidateNested()
+  @Type(() => CoordinatesDto)
   public location?: CoordinatesDto;
+
+  @IsOptional()
+  @IsMongoId({ message: UpdateOfferValidationMessage.cityId.invalidId })
+  public cityId: string;
 }

@@ -1,8 +1,23 @@
 import dayjs from 'dayjs';
+import { randomCirclePoint } from 'random-location';
+
 import { OfferGenerator } from './offer-generator.interface.js';
-import { AmenityType, City, HousingType, type MockServerData, UserType } from '../../types/index.js';
-import { generateRandomValue, getRandomItem, getRandomItems } from '../../helpers/index.js';
-import { GUESTS, LATITUDE, LONGITUDE, PRICE, ROOMS, WEEK_DAY } from './constraints.js';
+import {
+  AmenityType,
+  Coordinates,
+  HousingType,
+  type MockServerData,
+  UserType,
+} from '../../types/index.js';
+import {
+  generateRandomValue,
+  getRandomItem,
+  getRandomItems,
+} from '../../helpers/index.js';
+import { GUESTS, PRICE, ROOMS, WEEK_DAY } from './constraints.js';
+
+const formatLocation = ({ latitude, longitude }: Coordinates) =>
+  [latitude, longitude].join(';');
 
 export class TSVOfferGenerator implements OfferGenerator {
   constructor(private readonly mockData: MockServerData) {}
@@ -10,8 +25,10 @@ export class TSVOfferGenerator implements OfferGenerator {
   public generate(): string {
     const title = getRandomItem(this.mockData.titles);
     const description = getRandomItem(this.mockData.descriptions);
-    const postDate = dayjs().subtract(generateRandomValue(WEEK_DAY.FIRST, WEEK_DAY.LAST), 'day').toISOString();
-    const city = getRandomItem(Object.values(City));
+    const postDate = dayjs()
+      .subtract(generateRandomValue(WEEK_DAY.FIRST, WEEK_DAY.LAST), 'day')
+      .toISOString();
+    const city = getRandomItem(this.mockData.cities);
     const imagePreview = getRandomItem(this.mockData.previewImages);
     const images = getRandomItems(this.mockData.roomImages).join(';');
     const isPremium = getRandomItem([true, false]);
@@ -24,16 +41,14 @@ export class TSVOfferGenerator implements OfferGenerator {
     const email = getRandomItem(this.mockData.emails);
     const userType = getRandomItem(Object.values(UserType));
     const avatarPath = getRandomItem(this.mockData.avatars);
-    const location = [
-      generateRandomValue(LATITUDE.MIN, LATITUDE.MAX, 6),
-      generateRandomValue(LONGITUDE.MIN, LONGITUDE.MAX, 6),
-    ].join(';');
+    const location = randomCirclePoint(city, 5000);
 
     return [
       title,
       description,
       postDate,
-      city,
+      city.name,
+      formatLocation(city),
       imagePreview,
       images,
       isPremium,
@@ -46,7 +61,7 @@ export class TSVOfferGenerator implements OfferGenerator {
       email,
       userType,
       avatarPath,
-      location,
+      formatLocation(location),
     ].join('\t');
   }
 }

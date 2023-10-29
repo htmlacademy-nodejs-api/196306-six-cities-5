@@ -1,8 +1,15 @@
-import { getModelForClass, prop, defaultClasses, modelOptions, Ref } from '@typegoose/typegoose';
+import {
+  getModelForClass,
+  prop,
+  defaultClasses,
+  modelOptions,
+  Ref,
+} from '@typegoose/typegoose';
 
 import { User, UserType } from '../../types/index.js';
 import { createSHA256 } from '../../helpers/index.js';
 import { OfferEntity } from '../offer/index.js';
+import { DEFAULT_AVATAR_PATH } from './user.constant.js';
 
 export interface UserEntity extends defaultClasses.Base {}
 
@@ -15,7 +22,7 @@ export class UserEntity extends defaultClasses.TimeStamps implements User {
   @prop({ unique: true, required: true })
   public email: string;
 
-  @prop({ required: false, default: '' })
+  @prop({ required: false, default: DEFAULT_AVATAR_PATH })
   public avatarPath: string;
 
   @prop({ required: true, default: '' })
@@ -53,6 +60,11 @@ export class UserEntity extends defaultClasses.TimeStamps implements User {
 
   public setPassword(password: string, salt: string) {
     this.password = createSHA256(password, salt);
+  }
+
+  public verifyPassword(password: string, salt: string) {
+    const hashPassword = createSHA256(password, salt);
+    return hashPassword === this.password;
   }
 }
 
