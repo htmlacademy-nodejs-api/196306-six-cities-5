@@ -11,6 +11,7 @@ tags:
   - name: offers
   - name: users
   - name: comments
+  - name: cities
 
 paths:
   /users/register:
@@ -38,9 +39,13 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/validationError'
+                $ref: '#/components/schemas/validationError'
+        '403':
+          description: A logged in user can not register.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
         '409':
           description: A user with this email already exists.
           content:
@@ -59,7 +64,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/authorizeUser'
+              $ref: '#/components/schemas/loginUser'
         required: true
       responses:
         '200':
@@ -68,8 +73,24 @@ paths:
             text/plain:
               schema:
                 type: string
+        '400':
+          description: Some of the provided information is not correct.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validationError'
         '401':
+          description: A user is not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
+        '404':
           description: A user with specified credentials was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
 
     get:
       tags:
@@ -85,8 +106,12 @@ paths:
                 $ref: '#/components/schemas/user'
         '401':
           description: User session token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
 
-  /users/{usedId}/avatar:
+  /users/avatar:
     post:
       tags:
         - users
@@ -95,6 +120,72 @@ paths:
       responses:
         '201':
           description: Image has been uploaded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  filepath:
+                    type: string
+                    example:
+                      upload/Uq-PzHXRZnm6NzYvfjFGA.png
+        '401':
+          description: A user is not authorized to upload an avatar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
+
+  /users/favorites:
+    get:
+      tags:
+        - users
+        - offers
+      summary: List of favorite offers
+      description: Returns all the offers that have been added to favorites list by a current user.
+      responses:
+        '200':
+          description: List of offers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offerPreview'
+        '401':
+          description: User is not authorized to view favorite offers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
+
+    put:
+      tags:
+        - users
+        - offers
+      summary: Favorite the offer
+      description: Adds/removes an offer to/from the favorites list.
+      requestBody:
+        description: Information to mark an offer as favorite.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/favoriteOffer'
+      responses:
+        '204':
+          description: Offer's `favorite` status has been successfully updated
+        '400':
+          description: Some of the provided information is not correct.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validationError'
+        '401':
+          description: User is not authorized to favorite offers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
 
   /offers:
     get:
@@ -143,11 +234,13 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/validationError'
+                $ref: '#/components/schemas/validationError'
         '401':
           description: User is not authorized to create offers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
 
   /offers/{offerId}:
     get:
@@ -169,8 +262,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/offer'
+        '400':
+          description: Some of the provided information is not correct.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validationError'
         '404':
           description: Offer with the given ID does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
 
     patch:
       tags:
@@ -203,15 +306,25 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/validationError'
+                $ref: '#/components/schemas/validationError'
         '401':
           description: User is not authorized to edit offers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
         '403':
           description: User is not authorized to edit this offer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
         '404':
           description: Offer with the given ID does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
 
     delete:
       tags:
@@ -228,12 +341,30 @@ paths:
       responses:
         '204':
           description: Offer has been successfully removed.
+        '400':
+          description: offerId is not correct.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validationError'
         '401':
           description: User is not authorized to delete offers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
         '403':
           description: User is not authorized to delete this offer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
         '404':
           description: Offer with the given ID does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
 
   /offers/{offerId}/comments:
     get:
@@ -258,80 +389,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/comment'
+        '400':
+          description: offerId is not correct.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validationError'
         '404':
           description: Offer with the given ID does not exist.
-
-  /offers/favorites:
-    get:
-      tags:
-        - offers
-      summary: List of favorite offers
-      description: Returns all the offers that have been added to favorites list by a current user.
-      responses:
-        '200':
-          description: List of offers.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/offerPreview'
-        '401':
-          description: User is not authorized to view favorite offers.
-
-  /offers/{offerId}/favorite:
-    put:
-      tags:
-        - offers
-      summary: Favorite the offer
-      description: Adds/removes an offer to/from the favorites list.
-      parameters:
-        - in: path
-          name: offerId
-          schema:
-            type: string
-            required: true
-            description: The ID of the offer.
-      requestBody:
-        content:
-          text/plain:
-            schema:
-              type: boolean
-      responses:
-        '204':
-          description: Offer's `favorite` status has been successfully updated
-        '401':
-          description: User is not authorized to favorite offers.
-
-  /offers/premium:
-    get:
-      tags:
-        - offers
-      summary: List of premium offers
-      description: Returns a list of premium offers for a given city.
-      parameters:
-        - in: query
-          name: city
-          schema:
-            type: string
-            required: true
-            description: The city to get the premium offers for.
-            example: Paris
-      responses:
-        '200':
-          description: List of premium offers.
-          content:
-            application/json:
-              schema:
-                type: array
-                maxItems: 3
-                items:
-                  $ref: '#/components/schemas/offerPreview'
+                $ref: '#/components/schemas/generalError'
 
   /comments:
     post:
       tags:
         - comments
+        - offers
       summary: Comment creation
       description: Adds a comments to a given offer.
       requestBody:
@@ -353,13 +428,55 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/validationError'
+                $ref: '#/components/schemas/validationError'
         '401':
           description: User is not authorized to add comments.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
         '404':
           description: Offer with the given ID does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
+
+  /cities/:cityId/premium:
+    get:
+      tags:
+        - cities
+        - offers
+      summary: List of premium offers
+      description: Returns a list of premium offers for a given city.
+      parameters:
+        - in: path
+          name: cityId
+          schema:
+            type: string
+            required: true
+            description: The city to get the premium offers for.
+      responses:
+        '200':
+          description: List of premium offers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offerPreview'
+        '400':
+          description: cityId is not correct.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validationError'
+        '404':
+          description: City with the given ID does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
 
 components:
   schemas:
@@ -369,23 +486,24 @@ components:
         error:
           type: string
           description: A description of the error.
-          example: User already exists
+          example: Error description
 
     validationError:
       type: object
       properties:
-        message:
-          type: string
-          description: A description of the validation error.
-          example: Password too short
-        field:
-          type: string
-          description: The name of the field that failed validation.
-          example: password
-        code:
-          type: string
-          description: An error code associated with the validation error.
-          example: validation.createUser.password.tooShort
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: The name of the field that failed validation.
+                example: password
+              message:
+                type: string
+                description: A description of the validation error.
+                example: Password too short
 
     createUser:
       type: object
@@ -395,6 +513,10 @@ components:
           format: email
           required: true
           example: keks@htmlacademy.ru
+        avatarPath:
+          type: string
+          required: false
+          example: upload/ketUeXWH-AxExEduf3lSp.png
         name:
           type: string
           required: true
@@ -403,7 +525,7 @@ components:
           type: string
           format: password
           required: true
-          example: 123456
+          example: 12345678
         type:
           type: string
           enum:
@@ -411,42 +533,49 @@ components:
             - Pro
           required: true
           example: Pro
-        avatarPath:
-          type: string
-          required: false
-          example: https://s3.amazonaws.com/uifaces/faces/twitter/hugocornejo/128.jpg
 
-    authorizeUser:
+    loginUser:
       type: object
       properties:
         login:
           type: string
+          required: true
           example: keks@htmlacademy.ru
         password:
           type: string
-          example: 123456
+          required: true
+          example: 12345678
 
     user:
       type: object
       properties:
-        id:
-          type: string
-          example: 6329c3d6a04ab1061c6425ea
         email:
           type: string
           example: keks@htmlacademy.ru
+        avatarPath:
+          type: string
+          example: upload/ketUeXWH-AxExEduf3lSp.png
         name:
           type: string
           example: Keks
-        avatarPath:
-          type: string
-          example: https://s3.amazonaws.com/uifaces/faces/twitter/hugocornejo/128.jpg
         type:
           type: string
           enum:
             - Normal
             - Pro
           example: Pro
+
+    favoriteOffer:
+      type: object
+      properties:
+        offerId:
+          type: string
+          required: true
+          example: 6329c3d6a04ab1061c6425ea
+        isFavorite:
+          type: boolean
+          required: true
+          example: true
 
     createOffer:
       type: object
@@ -459,17 +588,11 @@ components:
           type: string
           required: true
           example: A quiet cozy and picturesque that hides behind a a river by the unique lightness of Amsterdam.
-        city:
+        postDate:
           type: string
-          enum:
-            - Amsterdam
-            - Brussels
-            - Cologne
-            - Dusseldorf
-            - Hamburg
-            - Paris
+          format: date-time
           required: true
-          example: Amsterdam
+          example: "2023-01-30T08:30:00Z"
         imagePreview:
           type: string
           required: true
@@ -487,14 +610,7 @@ components:
           required: true
           example: true
         housingType:
-          type: string
-          enum:
-            - Apartment
-            - House
-            - Room
-            - Hotel
-          required: true
-          example: Apartment
+          $ref: '#/components/schemas/housingType'
         roomAmount:
           type: integer
           required: true
@@ -538,6 +654,10 @@ components:
           type: string
           example: 6329c3d6a04ab1061c6425ea
           required: true
+        cityId:
+          type: string
+          example: 6329c3d6a04ab1061c6425ea
+          required: true
 
     updateOffer:
       type: object
@@ -545,26 +665,12 @@ components:
         title:
           type: string
           example: Beautiful & luxurious studio at great location
-          required: false
         description:
           type: string
           example: A quiet cozy and picturesque that hides behind a a river by the unique lightness of Amsterdam.
-          required: false
-        city:
-          type: string
-          enum:
-            - Amsterdam
-            - Brussels
-            - Cologne
-            - Dusseldorf
-            - Hamburg
-            - Paris
-          example: Amsterdam
-          required: false
         imagePreview:
           type: string
           example: https://s3.amasonaws.com/image-preview.png
-          required: false
         images:
           type: array
           minItems: 6
@@ -572,63 +678,35 @@ components:
           items:
             type: string
             example: https://s3.amasonaws.com/full-image.png
-          required: false
         isPremium:
           type: boolean
           example: true
-          required: false
         housingType:
-          type: string
-          enum:
-            - Apartment
-            - House
-            - Room
-            - Hotel
-          example: Apartment
-          required: false
+          $ref: '#/components/schemas/housingType'
         roomAmount:
           type: integer
           example: 3
-          required: false
         guestAmount:
           type: integer
           example: 5
-          required: false
         price:
           type: number
           format: float
           example: 100
-          required: false
         amenities:
-          type: array
-          items:
-            type: string
-            enum:
-              - Breakfast
-              - AirConditioning
-              - LaptopFriendlyWorkspace
-              - BabySeat
-              - Washer
-              - Towels
-              - Fridge
-            example: Fridge
-          required: false
+          $ref: '#/components/schemas/amenities'
         location:
-          type: object
-          properties:
-            latitude:
-              type: number
-              format: float
-              example: 48.85661
-            longitude:
-              type: number
-              format: float
-              example: 2.351499
-          required: false
+          $ref: '#/components/schemas/location'
+        cityId:
+          type: string
+          example: 6329c3d6a04ab1061c6425ea
 
     offer:
       type: object
       properties:
+        id:
+          type: string
+          example: 6329c3d6a04ab1061c6425ea
         title:
           type: string
           example: Beautiful & luxurious studio at great location
@@ -640,15 +718,7 @@ components:
           format: date-time
           example: 2023-10-11T13:15:56.868Z
         city:
-          type: string
-          enum:
-            - Amsterdam
-            - Brussels
-            - Cologne
-            - Dusseldorf
-            - Hamburg
-            - Paris
-          example: Amsterdam
+          $ref: '#/components/schemas/city'
         imagePreview:
           type: string
           example: https://s3.amasonaws.com/image-preview.png
@@ -670,13 +740,7 @@ components:
           format: float
           example: 4.2
         housingType:
-          type: string
-          enum:
-            - Apartment
-            - House
-            - Room
-            - Hotel
-          example: Apartment
+          $ref: '#/components/schemas/housingType'
         roomAmount:
           type: integer
           example: 3
@@ -688,29 +752,9 @@ components:
           format: float
           example: 100
         amenities:
-          type: array
-          items:
-            type: string
-            enum:
-              - Breakfast
-              - AirConditioning
-              - LaptopFriendlyWorkspace
-              - BabySeat
-              - Washer
-              - Towels
-              - Fridge
-            example: Fridge
+          $ref: '#/components/schemas/amenities'
         location:
-          type: object
-          properties:
-            latitude:
-              type: number
-              format: float
-              example: 48.85661
-            longitude:
-              type: number
-              format: float
-              example: 2.351499
+          $ref: '#/components/schemas/location'
         commentAmount:
           type: integer
           example: 5
@@ -723,48 +767,34 @@ components:
         id:
           type: string
           example: 6329c3d6a04ab1061c6425ea
-        price:
-          type: number
-          format: float
-          example: 100
         title:
           type: string
           example: Beautiful & luxurious studio at great location
         housingType:
-          type: string
-          enum:
-            - Apartment
-            - House
-            - Room
-            - Hotel
-          example: Apartment
-        isFavorite:
-          type: boolean
-          example: true
+          $ref: '#/components/schemas/housingType'
         postDate:
           type: string
           format: date-time
           example: 2023-10-11T13:15:56.868Z
         city:
-          type: string
-          enum:
-            - Amsterdam
-            - Brussels
-            - Cologne
-            - Dusseldorf
-            - Hamburg
-            - Paris
-          example: Amsterdam
+          $ref: '#/components/schemas/city'
         imagePreview:
           type: string
           example: https://s3.amasonaws.com/image-preview.png
         isPremium:
           type: boolean
           example: false
+        isFavorite:
+          type: boolean
+          example: true
         rating:
           type: number
           format: float
           example: 4.2
+        price:
+          type: number
+          format: float
+          example: 100
         commentAmount:
           type: integer
           example: 5
@@ -774,18 +804,12 @@ components:
       properties:
         text:
           type: string
-          minLength: 5
-          maxLength: 1024
           required: true
         rating:
           type: integer
           example: 4
           required: true
         offerId:
-          type: string
-          example: 6329c3d6a04ab1061c6425ea
-          required: true
-        authorId:
           type: string
           example: 6329c3d6a04ab1061c6425ea
           required: true
@@ -799,12 +823,59 @@ components:
         text:
           type: string
           example: Nice property!
+        rating:
+          type: integer
+          example: 4
         postDate:
           type: string
           format: date-time
           example: 2023-10-11T13:15:56.868Z
-        rating:
-          type: integer
-          example: 4
         author:
           $ref: '#/components/schemas/user'
+
+    amenities:
+      type: array
+      items:
+        type: string
+        enum:
+          - Breakfast
+          - AirConditioning
+          - LaptopFriendlyWorkspace
+          - BabySeat
+          - Washer
+          - Towels
+          - Fridge
+        example: Fridge
+
+    housingType:
+      type: string
+      enum:
+        - Apartment
+        - House
+        - Room
+        - Hotel
+      example: Apartment
+
+    location:
+      type: object
+      properties:
+        latitude:
+          type: number
+          format: float
+          example: 48.85661
+        longitude:
+          type: number
+          format: float
+          example: 2.351499
+
+    city:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 6329c3d6a04ab1061c6425ea
+        name:
+          type: string
+          example: Amsterdam
+        location:
+          $ref: '#/components/schemas/location'
