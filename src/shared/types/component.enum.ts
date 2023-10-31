@@ -18,4 +18,8 @@ export const Component = {
   CityModel: Symbol.for('CityModel'),
   CityService: Symbol.for('CityService'),
   CityController: Symbol.for('CityController'),
+  HttpExceptionFilter: Symbol.for('HttpExceptionFilter'),
+  ValidationExceptionFilter: Symbol.for('ValidationExceptionFilter'),
+  PathTransformer: Symbol.for('PathTransformer'),
+  FileUploadExceptionFilter: Symbol.for('FileUploadExceptionFilter'),
 } as const;

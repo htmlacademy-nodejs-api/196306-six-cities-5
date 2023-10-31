@@ -10,9 +10,6 @@ export const CreateOfferValidationMessage = {
   postDate: {
     invalidFormat: 'postDate must be a valid ISO date',
   },
-  image: {
-    maxLength: 'Too short for field «image»',
-  },
   images: {
     invalidFormat: 'images must be an array',
     maxLength: 'Too short for field «images»',

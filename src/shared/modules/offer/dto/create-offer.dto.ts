@@ -38,9 +38,6 @@ export class CreateOfferDto {
   )
   public postDate: Date;
 
-  @MaxLength(256, { message: CreateOfferValidationMessage.image.maxLength })
-  public imagePreview: string;
-
   @IsArray({ message: CreateOfferValidationMessage.images.invalidFormat })
   @MaxLength(256, {
     each: true,

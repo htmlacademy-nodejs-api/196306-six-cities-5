@@ -45,6 +45,8 @@ npm run cli -- --import ./mocks/mock-data.tsv admin test 127.0.0.1 six-cities se
 #### Переменные окружения
 
 ```bash
+HOST=localhost - Имя хоста, на котором стартует сервер
+
 PORT=4000 - Порт для входящих соединений
 
 SALT=secret - Соль для хэширования паролей
@@ -64,6 +66,8 @@ DB_MAX_RETRIES=3 - Максильмальное число попыток пер
 DB_RETRY_TIMEOUT=1000 - Число миллисекунд между попытками подключения к БД
 
 UPLOAD_DIRECTORY=upload - Директория для хранения загружаемых пользователями файлов
+
+STATIC_DIRECTORY=public - Директория для хранения статических файлов
 
 JWT_SECRET=super-secret! - Секрет для подписи JWT-токена
 ```
