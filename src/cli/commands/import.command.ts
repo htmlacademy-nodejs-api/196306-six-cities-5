@@ -1,34 +1,22 @@
 import { Command } from './command.interface.js';
 import { TSVFileReader } from '../../shared/libs/file-reader/index.js';
 import { createOffer, getMongoURI } from '../../shared/helpers/index.js';
-import { UserService } from '../../shared/modules/user/index.js';
-import {
-  DefaultOfferService,
-  OfferModel,
-  OfferService,
-} from '../../shared/modules/offer/index.js';
-import {
-  CityService,
-  CityModel,
-  DefaultCityService,
-} from '../../shared/modules/city/index.js';
-import {
-  DatabaseClient,
-  MongoDatabaseClient,
-} from '../../shared/libs/database-client/index.js';
+import { DefaultUserService, UserModel, UserService } from '../../shared/modules/user/index.js';
+import { DefaultOfferService, OfferModel, OfferService } from '../../shared/modules/offer/index.js';
+import { DatabaseClient, MongoDatabaseClient } from '../../shared/libs/database-client/index.js';
 import { ConsoleLogger, Logger } from '../../shared/libs/logger/index.js';
-import {
-  DefaultUserService,
-  UserModel,
-} from '../../shared/modules/user/index.js';
 import { Offer } from '../../shared/types/index.js';
-import { DEFAULT_DB_PORT, DEFAULT_USER_PASSWORD } from './command.constant.js';
+import {
+  CONNECTION_RETRY_TIMEOUT,
+  DEFAULT_DB_PORT,
+  DEFAULT_USER_PASSWORD,
+  MAX_CONNECTION_RETRIES
+} from './command.constant.js';
 
 export class ImportCommand implements Command {
-  private userService: UserService;
-  private offerService: OfferService;
-  private cityService: CityService;
-  private databaseClient: DatabaseClient;
+  private readonly userService: UserService;
+  private readonly offerService: OfferService;
+  private readonly databaseClient: DatabaseClient;
   private readonly logger: Logger;
   private salt: string;
 
@@ -39,7 +27,6 @@ export class ImportCommand implements Command {
     this.logger = new ConsoleLogger();
     this.offerService = new DefaultOfferService(this.logger, OfferModel);
     this.userService = new DefaultUserService(this.logger, UserModel);
-    this.cityService = new DefaultCityService(this.logger, CityModel);
     this.databaseClient = new MongoDatabaseClient(this.logger);
   }
 
@@ -62,20 +49,9 @@ export class ImportCommand implements Command {
     const user = await this.userService.findOrCreate(
       {
         ...offer.author,
-        password: DEFAULT_USER_PASSWORD,
+        password: DEFAULT_USER_PASSWORD
       },
-      this.salt,
-    );
-
-    const city = await this.cityService.findByCityNameOrCreate(
-      offer.city.name,
-      {
-        name: offer.city.name,
-        location: {
-          latitude: offer.city.location.latitude,
-          longitude: offer.city.location.longitude,
-        },
-      },
+      this.salt
     );
 
     await this.offerService.create({
@@ -83,7 +59,7 @@ export class ImportCommand implements Command {
       title: offer.title,
       description: offer.description,
       postDate: offer.postDate,
-      cityId: city.id,
+      city: offer.city,
       images: offer.images,
       isPremium: offer.isPremium,
       housingType: offer.housingType,
@@ -91,7 +67,7 @@ export class ImportCommand implements Command {
       guestAmount: offer.guestAmount,
       price: offer.price,
       amenities: offer.amenities,
-      location: offer.location,
+      location: offer.location
     });
   }
 
@@ -131,7 +107,7 @@ export class ImportCommand implements Command {
     const uri = getMongoURI(login, password, host, DEFAULT_DB_PORT, dbname);
     this.salt = salt;
 
-    await this.databaseClient.connect(uri);
+    await this.databaseClient.connect(uri, MAX_CONNECTION_RETRIES, CONNECTION_RETRY_TIMEOUT);
 
     const fileReader = new TSVFileReader(filename.trim());
 
@@ -143,7 +119,7 @@ export class ImportCommand implements Command {
     } catch (error) {
       this.logger.error(
         `Can't import data from file: ${filename}`,
-        error as Error,
+        error as Error
       );
     }
   }

@@ -11,7 +11,6 @@ tags:
   - name: offers
   - name: users
   - name: comments
-  - name: cities
 
 paths:
   /users/register:
@@ -99,13 +98,13 @@ paths:
       description: Returns authorized user's information.
       responses:
         '200':
-          description: User session token is valid. Logged user object.
+          description: User token is valid. Logged user object.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/loggedUser'
         '401':
-          description: User session token is invalid.
+          description: User token is invalid.
           content:
             application/json:
               schema:
@@ -140,57 +139,6 @@ paths:
                       http://mysite.com/upload/Uq-PzHXRZnm6NzYvfjFGA.png
         '401':
           description: A user is not authorized to upload an avatar.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/generalError'
-
-  /users/favorites:
-    get:
-      tags:
-        - users
-        - offers
-      summary: List of favorite offers
-      description: Returns all the offers that have been added to favorites list by a current user.
-      responses:
-        '200':
-          description: List of offers.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/offerPreview'
-        '401':
-          description: User is not authorized to view favorite offers.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/generalError'
-
-    put:
-      tags:
-        - users
-        - offers
-      summary: Favorite the offer
-      description: Adds/removes an offer to/from the favorites list.
-      requestBody:
-        description: Information to mark an offer as favorite.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/favoriteOffer'
-      responses:
-        '204':
-          description: Offer's `favorite` status has been successfully updated
-        '400':
-          description: Some of the provided information is not correct.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/validationError'
-        '401':
-          description: User is not authorized to favorite offers.
           content:
             application/json:
               schema:
@@ -250,6 +198,57 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/generalError'
+
+  /offers/favorites:
+    get:
+      tags:
+        - offers
+      summary: List of favorite offers
+      description: Returns all the offers that have been added to favorites list by a current user.
+      responses:
+        '200':
+          description: List of offers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offerPreview'
+        '401':
+          description: User is not authorized to view favorite offers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
+
+  /offers/premium:
+    get:
+      tags:
+        - offers
+      summary: List of premium offers
+      description: Returns a list of premium offers for a given city.
+      parameters:
+        - in: query
+          name: city
+          schema:
+            type: string
+            required: true
+            description: The city to get the premium offers for.
+      responses:
+        '200':
+          description: List of premium offers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offerPreview'
+        '400':
+          description: city is not correct.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validationError'
 
   /offers/{offerId}:
     get:
@@ -379,7 +378,6 @@ paths:
     get:
       tags:
         - offers
-        - comments
       summary: List of comments
       description: Returns a list of last comments for a given offer.
       parameters:
@@ -446,11 +444,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/generalError'
 
+  /offers/{offerId}/favorite:
+    put:
+      tags:
+        - offers
+      summary: Favorite the offer
+      description: Adds/removes an offer to/from the favorites list.
+      requestBody:
+        description: Information to mark an offer as favorite.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/favoriteOffer'
+      responses:
+        '204':
+          description: Offer's `favorite` status has been successfully updated
+        '400':
+          description: Some of the provided information is not correct.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validationError'
+        '401':
+          description: User is not authorized to favorite offers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generalError'
+
   /comments:
     post:
       tags:
         - comments
-        - offers
       summary: Comment creation
       description: Adds a comments to a given offer.
       requestBody:
@@ -481,42 +506,6 @@ paths:
                 $ref: '#/components/schemas/generalError'
         '404':
           description: Offer with the given ID does not exist.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/generalError'
-
-  /cities/:cityId/premium:
-    get:
-      tags:
-        - cities
-        - offers
-      summary: List of premium offers
-      description: Returns a list of premium offers for a given city.
-      parameters:
-        - in: path
-          name: cityId
-          schema:
-            type: string
-            required: true
-            description: The city to get the premium offers for.
-      responses:
-        '200':
-          description: List of premium offers.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/offerPreview'
-        '400':
-          description: cityId is not correct.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/validationError'
-        '404':
-          description: City with the given ID does not exist.
           content:
             application/json:
               schema:
@@ -581,12 +570,7 @@ components:
           required: true
           example: 12345678
         type:
-          type: string
-          enum:
-            - Normal
-            - Pro
-          required: true
-          example: Pro
+          $ref: '#/components/schemas/userType'
 
     loginUser:
       type: object
@@ -616,11 +600,7 @@ components:
           type: string
           example: Keks
         type:
-          type: string
-          enum:
-            - Normal
-            - Pro
-          example: Pro
+          $ref: '#/components/schemas/userType'
 
     user:
       type: object
@@ -638,19 +618,11 @@ components:
           type: string
           example: Keks
         type:
-          type: string
-          enum:
-            - Normal
-            - Pro
-          example: Pro
+          $ref: '#/components/schemas/userType'
 
     favoriteOffer:
       type: object
       properties:
-        offerId:
-          type: string
-          required: true
-          example: 6329c3d6a04ab1061c6425ea
         isFavorite:
           type: boolean
           required: true
@@ -729,9 +701,9 @@ components:
           type: string
           example: 6329c3d6a04ab1061c6425ea
           required: true
-        cityId:
+        city:
           type: string
-          example: 6329c3d6a04ab1061c6425ea
+          example: Hamburg
           required: true
 
     updateOffer:
@@ -769,9 +741,8 @@ components:
           $ref: '#/components/schemas/amenities'
         location:
           $ref: '#/components/schemas/location'
-        cityId:
-          type: string
-          example: 6329c3d6a04ab1061c6425ea
+        city:
+          $ref: '#/components/schemas/city'
 
     offer:
       type: object
@@ -941,13 +912,13 @@ components:
           example: 2.351499
 
     city:
-      type: object
-      properties:
-        id:
-          type: string
-          example: 6329c3d6a04ab1061c6425ea
-        name:
-          type: string
-          example: Amsterdam
-        location:
-          $ref: '#/components/schemas/location'
+      type: string
+      example: Amsterdam
+
+    userType:
+      type: string
+      enum:
+        - Regular
+        - Pro
+      required: true
+      example: Pro

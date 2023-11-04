@@ -1,17 +1,17 @@
 import {
-  AmenityType,
+  AmenityType, City,
   Coordinates,
   HousingType,
   Offer,
   User,
-  UserType,
+  UserType
 } from '../types/index.js';
 
 function isInEnum<E extends Record<string, string>>(
   enumeration: E,
   value: string,
 ): value is E[keyof E] {
-  return Object.values(enumeration).indexOf(value) !== -1;
+  return Object.values(enumeration).includes(value);
 }
 
 function parseAmenities(amenities: string): AmenityType[] {
@@ -62,13 +62,20 @@ function parseLocation(location: string): Coordinates {
   return { latitude, longitude };
 }
 
+function parseCity(city: string): City {
+  if (isInEnum<typeof City>(City, city)) {
+    return city;
+  }
+
+  throw new Error(`City ${city} is not supported`);
+}
+
 export function createOffer(offerData: string): Offer {
   const [
     title,
     description,
     postDate,
     cityName,
-    cityLocation,
     images,
     isPremium,
     housingType,
@@ -87,10 +94,7 @@ export function createOffer(offerData: string): Offer {
     title,
     description,
     postDate: new Date(postDate),
-    city: {
-      name: cityName,
-      location: parseLocation(cityLocation),
-    },
+    city: parseCity(cityName),
     images: images.split(';'),
     isPremium: Boolean(isPremium),
     housingType: parseHousingType(housingType),

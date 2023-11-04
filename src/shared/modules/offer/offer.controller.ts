@@ -7,19 +7,19 @@ import {
   HttpError,
   HttpMethod,
   PrivateRouteMiddleware,
-  UploadFilesMiddleware,
+  UploadFileMiddleware,
   ValidateAuthorMiddleware,
   ValidateDtoMiddleware,
   ValidateObjectIdMiddleware
 } from '../../libs/rest/index.js';
 import { Logger } from '../../libs/logger/index.js';
-import { Component } from '../../types/index.js';
-import { fillDTO } from '../../helpers/index.js';
-import { parseAsInteger } from '../../helpers/parse.js';
 import { Config, RestSchema } from '../../libs/config/index.js';
-import { OfferService } from './offer-service.interface.js';
+import { Component } from '../../types/index.js';
+import { fillDTO, parseAsInteger } from '../../helpers/index.js';
+import { UserService } from '../user/index.js';
 import { CommentService } from '../comment/index.js';
 import { CommentRdo } from '../comment/rdo/comment.rdo.js';
+import { OfferService } from './offer-service.interface.js';
 import { CreateOfferRequest } from './type/create-offer-request.type.js';
 import { UpdateOfferRequest } from './type/update-offer-request.type.js';
 import { ParamOfferId } from './type/param-offerid.type.js';
@@ -27,9 +27,17 @@ import { OfferRdo } from './rdo/offer.rdo.js';
 import { OfferPreviewRdo } from './rdo/offer-preview.rdo.js';
 import { CreateOfferDto } from './dto/create-offer.dto.js';
 import { UpdateOfferDto } from './dto/update-offer.dto.js';
-import { DEFAULT_OFFER_AMOUNT, DEFAULT_OFFER_IMAGES_AMOUNT } from './offer.constant.js';
-import { CityService } from '../city/index.js';
+import {
+  ALLOWED_IMAGE_MIME_TYPES,
+  DEFAULT_OFFER_AMOUNT,
+  MAX_OFFER_AMOUNT,
+  OFFER_IMAGES_AMOUNT,
+  PREMIUM_OFFER_AMOUNT
+} from './offer.constant.js';
 import { UploadImagesRdo } from './rdo/upload-images.rdo.js';
+import { QueryCity } from './type/query-city.type.js';
+import { FavoriteOfferDto } from './dto/favorite-offer.dto.js';
+import { FavoriteOfferRequest } from './type/favorite-offer-request.type.js';
 
 @injectable()
 export class OfferController extends BaseController {
@@ -37,7 +45,7 @@ export class OfferController extends BaseController {
     @inject(Component.Logger) protected readonly logger: Logger,
     @inject(Component.OfferService) private readonly offerService: OfferService,
     @inject(Component.CommentService) private readonly commentService: CommentService,
-    @inject(Component.CityService) private readonly cityService: CityService,
+    @inject(Component.UserService) private readonly userService: UserService,
     @inject(Component.Config) private readonly configService: Config<RestSchema>
   ) {
     super(logger);
@@ -58,6 +66,19 @@ export class OfferController extends BaseController {
         new PrivateRouteMiddleware(),
         new ValidateDtoMiddleware(CreateOfferDto)
       ]
+    });
+
+    this.addRoute({
+      path: '/favorites',
+      method: HttpMethod.Get,
+      handler: this.getFavorites,
+      middlewares: [new PrivateRouteMiddleware()]
+    });
+
+    this.addRoute({
+      path: '/premium',
+      method: HttpMethod.Get,
+      handler: this.getPremiumOffers
     });
 
     this.addRoute({
@@ -114,7 +135,24 @@ export class OfferController extends BaseController {
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId'),
         new ValidateAuthorMiddleware(this.offerService, 'Offer', 'offerId'),
-        new UploadFilesMiddleware(this.configService.get('UPLOAD_DIRECTORY'), 'image', DEFAULT_OFFER_IMAGES_AMOUNT)
+        new UploadFileMiddleware(
+          this.configService.get('UPLOAD_DIRECTORY'),
+          'image',
+          ALLOWED_IMAGE_MIME_TYPES,
+          OFFER_IMAGES_AMOUNT
+        )
+      ]
+    });
+
+    this.addRoute({
+      path: '/:offerId/favorite',
+      method: HttpMethod.Put,
+      handler: this.markAsFavorite,
+      middlewares: [
+        new PrivateRouteMiddleware(),
+        new ValidateObjectIdMiddleware('offerId'),
+        new ValidateDtoMiddleware(FavoriteOfferDto),
+        new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
       ]
     });
   }
@@ -124,7 +162,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const amount = Math.max(
-      parseAsInteger(query.limit) ?? 0,
+      Math.min(parseAsInteger(query.limit) ?? 0, MAX_OFFER_AMOUNT),
       DEFAULT_OFFER_AMOUNT
     );
     const offers = await this.offerService.find(tokenPayload?.id, amount);
@@ -158,18 +196,6 @@ export class OfferController extends BaseController {
     { params, body, tokenPayload }: UpdateOfferRequest,
     res: Response
   ): Promise<void> {
-    if (body.cityId) {
-      const foundCity = await this.cityService.findByCityId(body.cityId);
-
-      if (!foundCity) {
-        throw new HttpError(
-          StatusCodes.BAD_REQUEST,
-          `City with id ${body.cityId} does not exist`,
-          'OfferController'
-        );
-      }
-    }
-
     await this.offerService.updateById(params.offerId, body);
     const offer = await this.offerService.findById(
       tokenPayload.id,
@@ -201,12 +227,53 @@ export class OfferController extends BaseController {
       throw new HttpError(StatusCodes.INTERNAL_SERVER_ERROR, 'No files were uploaded');
     }
 
-    const { offerId} = params;
+    const { offerId } = params;
     const fileNames = files.map((file) => file.filename);
     const updateDto = {
       images: fileNames
     };
     await this.offerService.updateById(offerId, updateDto);
     this.created(res, fillDTO(UploadImagesRdo, updateDto));
+  }
+
+  public async getPremiumOffers(
+    { query, tokenPayload }: Request<unknown, unknown, unknown, QueryCity>,
+    res: Response
+  ): Promise<void> {
+    const offers = await this.offerService.findPremiumByCity(
+      tokenPayload?.id,
+      query.city as string,
+      PREMIUM_OFFER_AMOUNT
+    );
+
+    this.ok(res, fillDTO(OfferPreviewRdo, offers));
+  }
+
+  public async getFavorites(
+    { tokenPayload: { id } }: Request,
+    res: Response
+  ): Promise<void> {
+    const offers = await this.offerService.findFavoriteByUserId(id);
+    this.ok(res, fillDTO(OfferPreviewRdo, offers));
+  }
+
+  public async markAsFavorite(
+    { body, params, tokenPayload: { id, email } }: FavoriteOfferRequest,
+    res: Response
+  ): Promise<void> {
+    const user = await this.userService.findByEmail(email);
+    const favorites = new Set(user!.favorites.map((offer) => offer.id));
+
+    if (body.isFavorite) {
+      favorites.add(params.offerId);
+    } else {
+      favorites.delete(params.offerId);
+    }
+
+    await this.userService.updateById(id, {
+      favorites: [...favorites]
+    });
+
+    this.noContent(res, null);
   }
 }
