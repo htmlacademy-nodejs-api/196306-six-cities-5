@@ -874,6 +874,8 @@ components:
         commentAmount:
           type: integer
           example: 5
+        location:
+          $ref: '#/components/schemas/location'
 
     createComment:
       type: object
