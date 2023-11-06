@@ -8,7 +8,7 @@ import { Component } from '../shared/types/index.js';
 import { DatabaseClient } from '../shared/libs/database-client/index.js';
 import { getFullServerPath, getMongoURI } from '../shared/helpers/index.js';
 import { Controller, ExceptionFilter, ParseTokenMiddleware } from '../shared/libs/rest/index.js';
-import { STATIC_FILES_ROUTE, STATIC_UPLOAD_ROUTE } from './rest.constant.js';
+import { LOGS, STATIC_FILES_ROUTE, STATIC_UPLOAD_ROUTE } from './rest.constant.js';
 
 @injectable()
 export class RestApplication {
@@ -76,26 +76,29 @@ export class RestApplication {
   }
 
   public async init() {
-    this.logger.info('Application initialization');
+    this.logger.info(LOGS.APP_INIT);
 
-    this.logger.info('Initializing database…');
+    this.logger.info(LOGS.DB_INIT);
     await this.initDb();
-    this.logger.info('Database initialization complete.');
+    this.logger.info(LOGS.DB_READY);
 
-    this.logger.info('Initializing app-level middleware…');
+    this.logger.info(LOGS.MIDDLEWARE_INIT);
     await this.initMiddleware();
-    this.logger.info('App-level middleware initialization complete.');
+    this.logger.info(LOGS.MIDDLEWARE_READY);
 
-    this.logger.info('Initializing controllers…');
+    this.logger.info(LOGS.CONTROLLER_INIT);
     await this.initControllers();
-    this.logger.info('Controller initialization complete.');
+    this.logger.info(LOGS.CONTROLLER_READY);
 
-    this.logger.info('Initializing exception filters…');
+    this.logger.info(LOGS.EXCEPTION_FILTER_INIT);
     await this.initExceptionFilters();
-    this.logger.info('Exception filters initialization complete.');
+    this.logger.info(LOGS.EXCEPTION_FILTER_READY);
 
-    this.logger.info('Initializing server…');
+    this.logger.info(LOGS.SERVER_INIT);
     await this.initServer();
-    this.logger.info(`🚀 Server started on ${getFullServerPath(this.config.get('HOST'), this.config.get('PORT'))}`);
+    this.logger.info(LOGS.SERVER_STARTED.replace(
+      '{address}',
+      getFullServerPath(this.config.get('HOST'), this.config.get('PORT'))
+    ));
   }
 }

@@ -9,7 +9,7 @@ import { Offer } from '../../shared/types/index.js';
 import {
   CONNECTION_RETRY_TIMEOUT,
   DEFAULT_DB_PORT,
-  DEFAULT_USER_PASSWORD,
+  DEFAULT_USER_PASSWORD, LOGS,
   MAX_CONNECTION_RETRIES
 } from './command.constant.js';
 
@@ -75,32 +75,32 @@ export class ImportCommand implements Command {
     const [filename, login, password, host, dbname, salt] = parameters;
 
     if (!filename) {
-      this.logger.warn('Missing parameter: filename');
+      this.logger.warn(LOGS.MISSING_PARAM.replace('{param}', 'filename'));
       return;
     }
 
     if (!login) {
-      this.logger.warn('Missing parameter: login');
+      this.logger.warn(LOGS.MISSING_PARAM.replace('{param}', 'login'));
       return;
     }
 
     if (!password) {
-      this.logger.warn('Missing parameter: password');
+      this.logger.warn(LOGS.MISSING_PARAM.replace('{param}', 'password'));
       return;
     }
 
     if (!host) {
-      this.logger.warn('Missing parameter: host');
+      this.logger.warn(LOGS.MISSING_PARAM.replace('{param}', 'host'));
       return;
     }
 
     if (!dbname) {
-      this.logger.warn('Missing parameter: dbname');
+      this.logger.warn(LOGS.MISSING_PARAM.replace('{param}', 'dbname'));
       return;
     }
 
     if (!salt) {
-      this.logger.warn('Missing parameter: salt');
+      this.logger.warn(LOGS.MISSING_PARAM.replace('{param}', 'salt'));
       return;
     }
 
